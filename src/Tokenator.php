@@ -8,6 +8,7 @@ class Tokenator extends DataExtension
 {
     private static $tokenator_field;
     private static $tokenator_char_length;
+    private static $tokenator_allow_multicase = false;
 
     public static function generate_tokenator(?int $charLength = null)
     {
@@ -16,6 +17,7 @@ class Tokenator extends DataExtension
         }
         $token = '';
         $codeAlphabet = 'abcdefghijklmnopqrstuvwxyz';
+        $codeAlphabet .= 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $codeAlphabet .= '0123456789';
         $max = strlen($codeAlphabet);
         for ($i = 0; $i < $charLength; $i++) {
@@ -34,6 +36,9 @@ class Tokenator extends DataExtension
                 $charLength = null;
             }
             $token = self::generate_tokenator($charLength);
+            if (!$this->getOwner()->config()->get('tokenator_allow_multicase')) {
+                $token = strtolower($token);
+            }
 
             if ($this->getOwner()->hasMethod('getTokenatorScope')) {
                 $scope = $this->getOwner()->getTokenatorScope();
