@@ -1,6 +1,6 @@
 <?php
 
-namespace VisualMetrics\HSU\Core\Extensions;
+namespace Fromholdio\Tokenator;
 
 use SilverStripe\ORM\DataExtension;
 
