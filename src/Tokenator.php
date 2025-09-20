@@ -2,9 +2,9 @@
 
 namespace Fromholdio\Tokenator;
 
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 
-class Tokenator extends DataExtension
+class Tokenator extends Extension
 {
     private static $tokenator_field;
     private static $tokenator_char_length;
