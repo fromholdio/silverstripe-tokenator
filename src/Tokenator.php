@@ -2,7 +2,10 @@
 
 namespace Fromholdio\Tokenator;
 
+use LogicException;
 use SilverStripe\Core\Extension;
+use SilverStripe\ORM\DataList;
+use SilverStripe\ORM\DataObject;
 
 class Tokenator extends Extension
 {
@@ -40,16 +43,9 @@ class Tokenator extends Extension
                 $token = strtolower($token);
             }
 
-            if ($this->getOwner()->hasMethod('getTokenatorScope')) {
-                $scope = $this->getOwner()->getTokenatorScope();
-                $scope->filter($tokenatorField, $token);
-            }
-            else {
-                $class = get_class($this->getOwner());
-                $scope = $class::get()->filter($tokenatorField, $token);
-                if ($this->getOwner()->isInDB()) {
-                    $scope = $scope->exclude('ID', $this->getOwner()->ID);
-                }
+            $scope = $this->getCurrentTokenatorScope()->filter($tokenatorField, $token);
+            if ($this->getOwner()->isInDB()) {
+                $scope = $scope->exclude('ID', $this->getOwner()->ID);
             }
 
             if ($scope->count() > 0) {
@@ -59,6 +55,29 @@ class Tokenator extends Extension
             $this->getOwner()->{$tokenatorField} = $token;
         }
         return $this->getOwner();
+    }
+
+    /**
+     * The records a new token must not clash with: the owner's getTokenatorScope()
+     * when it defines one, otherwise every record of the owner's class. A hook
+     * must return a DataList on the owner's base table, so that excluding the
+     * owner by ID excludes the owner and nothing else.
+     */
+    protected function getCurrentTokenatorScope(): DataList
+    {
+        $owner = $this->getOwner();
+        $class = get_class($owner);
+        if (!$owner->hasMethod('getTokenatorScope')) {
+            return $class::get();
+        }
+        $scope = $owner->getTokenatorScope();
+        $schema = DataObject::getSchema();
+        if (!$scope instanceof DataList
+            || $schema->baseDataClass($scope->dataClass()) !== $schema->baseDataClass($class)
+        ) {
+            throw new LogicException($class . '::getTokenatorScope() must return a DataList on its own base table.');
+        }
+        return $scope;
     }
 
     public function onBeforeWrite()
